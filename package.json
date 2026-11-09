@@ -1,0 +1,12 @@
+{
+  "name": "csv-to-json",
+  "version": "1.0.0",
+  "description": "Upload a CSV and transform it to JSON using a data map",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

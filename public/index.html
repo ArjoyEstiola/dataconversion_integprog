@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CSV to JSON</title>
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --card: #151b2e;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #263049;
+        --accent: #3b82f6;
+        --accent-hover: #60a5fa;
+        --code-bg: #0a0f1d;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 32px 16px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    .container { max-width: 820px; margin: 0 auto; }
+
+    header { margin-bottom: 24px; }
+    header h1 { margin: 0; font-size: 1.9rem; }
+    header p { margin: 4px 0 0; color: var(--muted); font-style: italic; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .card h2 { margin: 0 0 12px; font-size: 1.1rem; }
+    .step {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.85rem;
+    }
+
+    .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+    input[type="file"] {
+      flex: 1 1 240px;
+      padding: 8px;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--text);
+    }
+    input[type="file"]::file-selector-button {
+      margin-right: 10px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    button {
+      padding: 9px 18px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: var(--accent-hover); }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      max-height: 420px;
+      overflow: auto;
+      border-radius: 8px;
+      background: var(--code-bg);
+      color: var(--code-text);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Arjoy M. Estiola</h1>
+      <p>IT 3206N PM 6:00 - 8:30</p>
+    </header>
+
+    <h1 style="margin: 0 0 16px;">CSV to JSON</h1>
+
+    <section class="card">
+      <h2><span class="step">1</span>Upload CSV</h2>
+      <div class="row">
+        <input type="file" id="csvFile" accept=".csv" />
+        <button id="convertBtn">Convert CSV to JSON</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">2</span>JSON Display</h2>
+      <pre id="output">Upload a CSV file and click Convert CSV to JSON.</pre>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">3</span>Download JSON File</h2>
+      <button id="downloadBtn">Download JSON</button>
+    </section>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("csvFile");
+    const output = document.getElementById("output");
+    let jsonText = "";
+
+    document.getElementById("convertBtn").addEventListener("click", async () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        output.textContent = "Please choose a CSV file first.";
+        return;
+      }
+
+      try {
+        const csvText = await file.text();
+        const res = await fetch("/convert", {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: csvText,
+        });
+
+        const body = await res.text();
+        if (!res.ok) {
+          jsonText = "";
+          output.textContent = "Error: " + (JSON.parse(body).error || "Conversion failed.");
+          return;
+        }
+        jsonText = body;
+        output.textContent = jsonText;
+      } catch (err) {
+        jsonText = "";
+        output.textContent = "Error: " + err.message;
+      }
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", () => {
+      if (!jsonText) {
+        alert("Nothing to download yet. Convert a CSV first.");
+        return;
+      }
+      const blob = new Blob([jsonText], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "students.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
